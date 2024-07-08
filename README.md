@@ -31,6 +31,7 @@ Each game has a unique ID, list of two players, turn state and a winner state.
 
 
 Entities:
+
 ###Game###
 array of 9 empty string 
 unique ID
