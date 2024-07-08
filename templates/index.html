@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tic Tac Toe</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        function createGame() {
+            fetch('/create', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    const gameId = data.game_id;
+                    document.getElementById('gameId').innerText = `Game ID: ${gameId}`;
+                    socket.emit('join', { game_id: gameId });
+                });
+        }
+
+        function joinGame() {
+            const gameId = document.getElementById('joinGameId').value;
+            fetch('/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game_id: gameId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('gameId').innerText = `Game ID: ${gameId}`;
+                        document.getElementById('playerSymbol').value = data.player_symbol;
+                        socket.emit('join', { game_id: gameId });
+                    } else {
+                        alert(data.error);
+                    }
+                });
+        }
+
+        function makeMove(position) {
+            const gameId = document.getElementById('gameId').innerText.split(' ')[2];
+            const playerSymbol = document.getElementById('playerSymbol').value;
+            socket.emit('move', { game_id: gameId, position: position, player_symbol: playerSymbol });
+        }
+
+        socket.on('update', data => {
+            const board = data.board;
+            for (let i = 0; i < board.length; i++) {
+                document.getElementById(`cell${i}`).innerText = board[i];
+            }
+            if (data.winner) {
+                alert(`Player ${data.winner} wins!`);
+            } else {
+                document.getElementById('turn').innerText = `Turn: Player ${data.current_turn}`;
+            }
+        });
+
+        function setupCellListeners() {
+            for (let i = 0; i < 9; i++) {
+                document.getElementById(`cell${i}`).addEventListener('click', () => makeMove(i));
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', setupCellListeners);
+    </script>
+</head>
+<body>
+    <div>
+        <button onclick="createGame()">Create Game</button>
+        <input type="text" id="joinGameId" placeholder="Enter Game ID">
+        <button onclick="joinGame()">Join Game</button>
+    </div>
+    <div id="gameId"></div>
+    <input type="hidden" id="playerSymbol" value="">
+    <div id="turn"></div>
+    <div>
+        <div style="display: flex;">
+            <button id="cell0"></button>
+            <button id="cell1"></button>
+            <button id="cell2"></button>
+        </div>
+        <div style="display: flex;">
+            <button id="cell3"></button>
+            <button id="cell4"></button>
+            <button id="cell5"></button>
+        </div>
+        <div style="display: flex;">
+            <button id="cell6"></button>
+            <button id="cell7"></button>
+            <button id="cell8"></button>
+        </div>
+    </div>
+</body>
+</html>
